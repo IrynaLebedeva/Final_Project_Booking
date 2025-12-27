@@ -1,0 +1,48 @@
+services:
+  db:
+    image: mysql:latest
+    container_name: rent-db
+#    env_file:
+#      - '.env'
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+
+    volumes:
+      - mysql_data:/var/lib/mysql     #исправлено при запуске в  AWS:  - ./mysql_data:/var/lib/mysql
+
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      start_interval: 10s
+      start_period: 10s
+      timeout: 5s
+      retries: 3
+
+    ports:
+      - "33066:3306"
+
+#  web:
+#    build:
+#      dockerfile: Dockerfile
+#    restart: always
+#    container_name: my_pycharm
+#    ports:
+#      - "8000:8000"
+#    depends_on:
+#      - db
+#    environment:
+##      - DB_HOST=db
+#      - MYSQL_HOST=db
+##      - DJANGO_SETTINGS_MODULE=core.settings
+#      - MYSQL_DATABASE=${MYSQL_DATABASE}
+#      - MYSQL_USER=${MYSQL_USER}
+#      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+#      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+#      - DATABASE_PORT=33066
+#
+
+volumes:
+  mysql_data:
+
