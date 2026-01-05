@@ -1,4 +1,6 @@
 from rest_framework import serializers
+from django.utils import timezone
+from django.db.models import Q
 
 from booking.models import Reviews, Property, Bookings
 from booking.serializers.user import UserShortSerializer
@@ -27,16 +29,24 @@ class ReviewCreateSerializer(serializers.ModelSerializer):
     def validate(self, data):
         user = self.context['request'].user
         property_obj = data['property']
+
+
         if user.role != 'guest':
             raise serializers.ValidationError('Only guests can leave reviews.')
-        has_completed_booking =Bookings.objects.filter(user=user,
-                                                       listing__property=property_obj,
-                                                       status = 'completed').exists()
+
+        has_completed_booking = Bookings.objects.filter(
+            user=user,
+            listing__property=property_obj
+        ).filter(
+            Q(status='completed') | Q(end_date__lt=timezone.now().date())
+        ).exists()
+
         if not has_completed_booking:
             raise serializers.ValidationError('You must complete a booking before leaving a review.')
 
+        # Проверка, что отзыв ещё не оставлен
         if Reviews.objects.filter(user=user, property=property_obj).exists():
-            raise serializers.ValidationError('You have already left a review for this property.')
+            raise serializers.ValidationError('You already left a review.')
 
         return data
 

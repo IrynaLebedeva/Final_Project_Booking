@@ -39,6 +39,12 @@ class BookingListView(ListAPIView):
         else:
             qs = Bookings.objects.none()
 
+        today = now().date()
+
+        # Авто-перевод всех истёкших бронирований в completed
+        qs.filter(end_date__lt=today, status__in=['confirmed', 'pending']).update(status='completed')
+
+
     # Фильтрация по статусу
         if status_param == 'active':
             qs = qs.filter(status__in=['pending', 'confirmed'])
@@ -59,7 +65,7 @@ class BookingListView(ListAPIView):
 class BookingDetailView(RetrieveUpdateDestroyAPIView):
     queryset = Bookings.objects.all()
     serializer_class = BookingListSerializer
-    permission_classes = [IsAuthenticated, IsGuest, IsHostOrLandlord]
+    permission_classes = [IsAuthenticated]
 
     @transaction.atomic
     def patch(self, request, *args, **kwargs):
@@ -114,7 +120,7 @@ class BookingDetailView(RetrieveUpdateDestroyAPIView):
                     end_date__gt=booking.start_date
                 ).exclude(pk=booking.pk)
 
-                overlapping.update(status='rejected')
+                # overlapping.update(status='rejected')  #  не нужно, т.к. параллельное бронирование запрещено
                 booking.status = 'confirmed'
 
             if action == 'reject':
